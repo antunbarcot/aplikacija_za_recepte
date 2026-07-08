@@ -11,6 +11,9 @@
     "ios": {
       "supportsTablet": true
     },
+      "extra":{
+        "clerkPublishableKey": "pk_test_c21hc2hpbmctbXVzdGFuZy05Ny5jbGVyay5hY2NvdW50cy5kZXYk"
+      },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -40,3 +43,4 @@
     }
   }
 }
+

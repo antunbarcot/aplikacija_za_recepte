@@ -5,9 +5,9 @@ import { favoritesTable } from "./db/schema.js";
 import { and, eq } from "drizzle-orm";
 import job from "./config/cron.js";
 
-const app = express();
+const app = express();       
 const PORT = ENV.PORT || 5001;
-
+//express.js pokreće server na portu 5001
 if (ENV.NODE_ENV === "production") job.start();
 
 app.use(express.json());

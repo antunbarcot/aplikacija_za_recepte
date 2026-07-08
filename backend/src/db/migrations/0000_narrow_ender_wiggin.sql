@@ -8,3 +8,4 @@ CREATE TABLE "favorites" (
 	"servings" text,
 	"created_at" timestamp DEFAULT now()
 );
+-- migracijski file napisan u sql, dobio se pretvorbom iz js

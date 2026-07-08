@@ -1,7 +1,7 @@
 const BASE_URL = "https://www.themealdb.com/api/json/v1/1";
 
 export const MealAPI = {
-  // search meal by name
+  // pretraga jela po imenu
   searchMealsByName: async (query) => {
     try {
       const response = await fetch(`${BASE_URL}/search.php?s=${encodeURIComponent(query)}`);
@@ -13,7 +13,7 @@ export const MealAPI = {
     }
   },
 
-  // lookup full meal details by id
+  // pretraga detalja jela po ID-u
   getMealById: async (id) => {
     try {
       const response = await fetch(`${BASE_URL}/lookup.php?i=${id}`);
@@ -25,7 +25,7 @@ export const MealAPI = {
     }
   },
 
-  // lookup a single random meal
+  // pretraga jednog nasumičnog jela
   getRandomMeal: async () => {
     try {
       const response = await fetch(`${BASE_URL}/random.php`);
@@ -37,7 +37,7 @@ export const MealAPI = {
     }
   },
 
-  // get multiple random meals
+  // dobivanje više nasumičnih jela
   getRandomMeals: async (count = 6) => {
     try {
       const promises = Array(count)
@@ -51,7 +51,7 @@ export const MealAPI = {
     }
   },
 
-  // list all meal categories
+  // izlistaj kategorije jela
   getCategories: async () => {
     try {
       const response = await fetch(`${BASE_URL}/categories.php`);
@@ -63,7 +63,7 @@ export const MealAPI = {
     }
   },
 
-  // filter by main ingredient
+  // pretraži po sastojku
   filterByIngredient: async (ingredient) => {
     try {
       const response = await fetch(`${BASE_URL}/filter.php?i=${encodeURIComponent(ingredient)}`);
@@ -75,7 +75,7 @@ export const MealAPI = {
     }
   },
 
-  // filter by category
+  // retraži po kategoriji
   filterByCategory: async (category) => {
     try {
       const response = await fetch(`${BASE_URL}/filter.php?c=${encodeURIComponent(category)}`);
@@ -87,11 +87,11 @@ export const MealAPI = {
     }
   },
 
-  // transform TheMealDB meal data to our app format
+  // pretvaranje formata iz TheMealDb u format aplikacije
   transformMealData: (meal) => {
     if (!meal) return null;
 
-    // extract ingredients from the meal object
+    // izvlačenje sastojaka 
     const ingredients = [];
     for (let i = 1; i <= 20; i++) {
       const ingredient = meal[`strIngredient${i}`];
@@ -102,7 +102,7 @@ export const MealAPI = {
       }
     }
 
-    // extract instructions
+    // izvlačenje uputa
     const instructions = meal.strInstructions
       ? meal.strInstructions.split(/\r?\n/).filter((step) => step.trim())
       : [];

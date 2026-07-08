@@ -63,11 +63,11 @@ const RecipeDetailScreen = () => {
     loadRecipeDetail();
   }, [recipeId, userId]);
 
-  const getYouTubeEmbedUrl = (url) => {
+  /*const getYouTubeEmbedUrl = (url) => {
     // example url: https://www.youtube.com/watch?v=mTvlmY4vCug
     const videoId = url.split("v=")[1];
     return `https://www.youtube.com/embed/${videoId}`;
-  };
+  };*/
 
   const handleToggleSave = async () => {
     setIsSaving(true);
@@ -193,8 +193,8 @@ const RecipeDetailScreen = () => {
               <Text style={recipeDetailStyles.statLabel}>Servings</Text>
             </View>
           </View>
-
-          {recipe.youtubeUrl && (
+           
+          {/* {recipe.youtubeUrl && (
             <View style={recipeDetailStyles.sectionContainer}>
               <View style={recipeDetailStyles.sectionTitleRow}>
                 <LinearGradient
@@ -216,7 +216,7 @@ const RecipeDetailScreen = () => {
                 />
               </View>
             </View>
-          )}
+          )} */}
 
           {/* INGREDIENTS SECTION */}
           <View style={recipeDetailStyles.sectionContainer}>

@@ -23,7 +23,6 @@ const FavoritesScreen = () => {
 
         const favorites = await response.json();
 
-        // transform the data to match the RecipeCard component's expected format
         const transformedFavorites = favorites.map((favorite) => ({
           ...favorite,
           id: favorite.recipeId,
