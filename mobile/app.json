@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "mobile", 
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,6 +15,7 @@
         "clerkPublishableKey": "pk_test_c21hc2hpbmctbXVzdGFuZy05Ny5jbGVyay5hY2NvdW50cy5kZXYk"
       },
     "android": {
+      "package": "com.antunb.recipeapp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"

@@ -69,7 +69,7 @@ const RecipeDetailScreen = () => {
     return `https://www.youtube.com/embed/${videoId}`;
   };*/
 
-  const handleToggleSave = async () => {
+  /*const handleToggleSave = async () => {
     setIsSaving(true);
 
     try {
@@ -95,6 +95,49 @@ const RecipeDetailScreen = () => {
             image: recipe.image,
             cookTime: recipe.cookTime,
             servings: recipe.servings,
+          }),
+        });
+
+        if (!response.ok) throw new Error("Failed to save recipe");
+        setIsSaved(true);
+      }
+    } catch (error) {
+      console.error("Error toggling recipe save:", error);
+      Alert.alert("Error", `Something went wrong. Please try again.`);
+    } finally {
+      setIsSaving(false);
+    }
+  };*/
+
+  const handleToggleSave = async () => {
+    setIsSaving(true);
+  
+    try {
+      if (isSaved) {
+        // remove from favorites
+        const response = await fetch(`${API_URL}/favorites/${userId}/${recipeId}`, {
+          method: "DELETE",
+        });
+        if (!response.ok) throw new Error("Failed to remove recipe");
+  
+        setIsSaved(false);
+      } else {
+        // add to favorites
+        // unutar else bloka za POST metodu:
+        const response = await fetch(`${API_URL}/favorites`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId,
+            recipeId: recipeId, 
+            // Koristimo naziv iz objekta, a ako ne postoji, stavljamo rezervno ime ili prazan tekst
+            title: recipe.title || recipe.strMeal || "Unknown Recipe", 
+            image: recipe.image || recipe.strMealThumb || "",
+            // Budući da vanjski API nema cookTime i servings, šaljemo fiksne vrijednosti kao u shemi
+            cookTime: recipe.cookTime || "30-45 min",
+            servings: recipe.servings || "4",
           }),
         });
 
