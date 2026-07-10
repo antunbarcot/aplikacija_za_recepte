@@ -18,10 +18,12 @@ app.get("/api/health", (req, res) => {
 
 app.post("/api/favorites", async (req, res) => {
   try {
+    // Primamo sve podatke koje tablica zahtijeva
     const { userId, recipeId, title, image, cookTime, servings } = req.body;
 
+    // Budući da baza zahtijeva title (NOT NULL), provjeravamo ga ovdje
     if (!userId || !recipeId || !title) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return res.status(400).json({ error: "Missing required fields: userId, recipeId or title" });
     }
 
     const newFavorite = await db
@@ -42,6 +44,33 @@ app.post("/api/favorites", async (req, res) => {
     res.status(500).json({ error: "Something went wrong" });
   }
 });
+
+// app.post("/api/favorites", async (req, res) => {
+//   try {
+//     const { userId, recipeId, title, image, cookTime, servings } = req.body;
+
+//     if (!userId || !recipeId || !title) {
+//       return res.status(400).json({ error: "Missing required fields" });
+//     }
+
+//     const newFavorite = await db
+//       .insert(favoritesTable)
+//       .values({
+//         userId,
+//         recipeId,
+//         title,
+//         image,
+//         cookTime,
+//         servings,
+//       })
+//       .returning();
+
+//     res.status(201).json(newFavorite[0]);
+//   } catch (error) {
+//     console.log("Error adding favorite", error);
+//     res.status(500).json({ error: "Something went wrong" });
+//   }
+// });
 
 app.get("/api/favorites/:userId", async (req, res) => {
   try {
@@ -66,7 +95,8 @@ app.delete("/api/favorites/:userId/:recipeId", async (req, res) => {
     await db
       .delete(favoritesTable)
       .where(
-        and(eq(favoritesTable.userId, userId), eq(favoritesTable.recipeId, parseInt(recipeId)))
+        // Maknut parseInt jer je recipe_id u shemi 'text'
+        and(eq(favoritesTable.userId, userId), eq(favoritesTable.recipeId, recipeId)) 
       );
 
     res.status(200).json({ message: "Favorite removed successfully" });
@@ -75,6 +105,26 @@ app.delete("/api/favorites/:userId/:recipeId", async (req, res) => {
     res.status(500).json({ error: "Something went wrong" });
   }
 });
+
+
+// app.delete("/api/favorites/:userId/:recipeId", async (req, res) => {
+//   try {
+//     const { userId, recipeId } = req.params;
+
+//     await db
+//       .delete(favoritesTable)
+//       .where(
+//         and(eq(favoritesTable.userId, userId), eq(favoritesTable.recipeId, parseInt(recipeId)))
+//       );
+
+//     res.status(200).json({ message: "Favorite removed successfully" });
+//   } catch (error) {
+//     console.log("Error removing a favorite", error);
+//     res.status(500).json({ error: "Something went wrong" });
+//   }
+// });
+
+
 
 app.listen(PORT, () => {
   console.log("Server is running on PORT:", PORT);
