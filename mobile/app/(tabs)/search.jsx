@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, FlatList } from "react-native";
-import { MealAPI } from "../../services/mealAPI";
 import { useDebounce } from "../../hooks/useDebounce";
 import { searchStyles } from "../../assets/styles/search.styles";
 import { COLORS } from "../../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import RecipeCard from "../../components/RecipeCard";
 import LoadingSpinner from "../../components/LoadingSpinner";
+
+// Android emulator:
+// const API_URL = "http://10.0.2.2:5001/api";
+
+// Fizicki mobitel:
+// stavi LAN IP svog racunala, npr. http://192.168.1.50:5001/api
+const API_URL = "http://10.0.2.2:5001/api";
 
 const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,29 +22,20 @@ const SearchScreen = () => {
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
+  const fetchRecipes = async (query = "") => {
+    const response = await fetch(
+      `${API_URL}/recipes?search=${encodeURIComponent(query)}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch recipes");
+    }
+
+    return await response.json();
+  };
+
   const performSearch = async (query) => {
-    // if no search query
-    if (!query.trim()) {
-      const randomMeals = await MealAPI.getRandomMeals(12);
-      return randomMeals
-        .map((meal) => MealAPI.transformMealData(meal))
-        .filter((meal) => meal !== null);
-    }
-
-    // search by name first, then by ingredient if no results
-
-    const nameResults = await MealAPI.searchMealsByName(query);
-    let results = nameResults;
-
-    if (results.length === 0) {
-      const ingredientResults = await MealAPI.filterByIngredient(query);
-      results = ingredientResults;
-    }
-
-    return results
-      .slice(0, 12)
-      .map((meal) => MealAPI.transformMealData(meal))
-      .filter((meal) => meal !== null);
+    return await fetchRecipes(query.trim());
   };
 
   useEffect(() => {
@@ -48,6 +45,7 @@ const SearchScreen = () => {
         setRecipes(results);
       } catch (error) {
         console.error("Error loading initial data:", error);
+        setRecipes([]);
       } finally {
         setInitialLoading(false);
       }
@@ -76,7 +74,9 @@ const SearchScreen = () => {
     handleSearch();
   }, [debouncedSearchQuery, initialLoading]);
 
-  if (initialLoading) return <LoadingSpinner message="Loading recipes..." />;
+  if (initialLoading) {
+    return <LoadingSpinner message="Loading recipes..." />;
+  }
 
   return (
     <View style={searchStyles.container}>
@@ -90,15 +90,22 @@ const SearchScreen = () => {
           />
           <TextInput
             style={searchStyles.searchInput}
-            placeholder="Search recipes, ingredients..."
+            placeholder="Search recipes..."
             placeholderTextColor={COLORS.textLight}
             value={searchQuery}
             onChangeText={setSearchQuery}
             returnKeyType="search"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery("")} style={searchStyles.clearButton}>
-              <Ionicons name="close-circle" size={20} color={COLORS.textLight} />
+            <TouchableOpacity
+              onPress={() => setSearchQuery("")}
+              style={searchStyles.clearButton}
+            >
+              <Ionicons
+                name="close-circle"
+                size={20}
+                color={COLORS.textLight}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -107,7 +114,7 @@ const SearchScreen = () => {
       <View style={searchStyles.resultsSection}>
         <View style={searchStyles.resultsHeader}>
           <Text style={searchStyles.resultsTitle}>
-            {searchQuery ? `Results for "${searchQuery}"` : "Popular Recipes"}
+            {searchQuery ? `Results for "${searchQuery}"` : "Recipes"}
           </Text>
           <Text style={searchStyles.resultsCount}>{recipes.length} found</Text>
         </View>
@@ -132,6 +139,7 @@ const SearchScreen = () => {
     </View>
   );
 };
+
 export default SearchScreen;
 
 function NoResultsFound() {

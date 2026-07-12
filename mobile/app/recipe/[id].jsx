@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-expo";
 import { API_URL } from "../../constants/api";
-import { MealAPI } from "../../services/mealAPI";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Image } from "expo-image";
 
@@ -12,10 +11,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../constants/colors";
 
 import { Ionicons } from "@expo/vector-icons";
-import { WebView } from "react-native-webview";
 
 const RecipeDetailScreen = () => {
-  const { id: recipeId } = useLocalSearchParams();
+  //const { id: recipeId } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const recipeId = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
 
   const [recipe, setRecipe] = useState(null);
@@ -28,10 +28,16 @@ const RecipeDetailScreen = () => {
 
   useEffect(() => {
     const checkIfSaved = async () => {
+      if (!userId || !recipeId) return;
+
       try {
         const response = await fetch(`${API_URL}/favorites/${userId}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch favorites");
+        }
+
         const favorites = await response.json();
-        const isRecipeSaved = favorites.some((fav) => fav.recipeId === parseInt(recipeId));
+        const isRecipeSaved = favorites.some((fav) => fav.recipeId === recipeId);
         setIsSaved(isRecipeSaved);
       } catch (error) {
         console.error("Error checking if recipe is saved:", error);
@@ -39,21 +45,35 @@ const RecipeDetailScreen = () => {
     };
 
     const loadRecipeDetail = async () => {
+      if (!recipeId) return;
+
       setLoading(true);
+
       try {
-        const mealData = await MealAPI.getMealById(recipeId);
-        if (mealData) {
-          const transformedRecipe = MealAPI.transformMealData(mealData);
-
-          const recipeWithVideo = {
-            ...transformedRecipe,
-            youtubeUrl: mealData.strYoutube || null,
-          };
-
-          setRecipe(recipeWithVideo);
+        const response = await fetch(`${API_URL}/recipes/${recipeId}`);
+        if (!response.ok) {
+          throw new Error("Failed to load recipe details");
         }
+
+        const data = await response.json();
+
+        const normalizedRecipe = {
+          id: data.id,
+          title: data.title || "Unknown Recipe",
+          image: data.image || "",
+          category: data.category || "Uncategorized",
+          area: data.area || "",
+          cookTime: data.cookTime || "30-45 min",
+          servings: data.servings || "4",
+          youtubeUrl: data.youtubeUrl || data.youtube_url || null,
+          ingredients: Array.isArray(data.ingredients) ? data.ingredients : [],
+          instructions: Array.isArray(data.instructions) ? data.instructions : [],
+        };
+
+        setRecipe(normalizedRecipe);
       } catch (error) {
         console.error("Error loading recipe detail:", error);
+        Alert.alert("Error", "Failed to load recipe details.");
       } finally {
         setLoading(false);
       }
@@ -63,67 +83,28 @@ const RecipeDetailScreen = () => {
     loadRecipeDetail();
   }, [recipeId, userId]);
 
-  /*const getYouTubeEmbedUrl = (url) => {
-    // example url: https://www.youtube.com/watch?v=mTvlmY4vCug
-    const videoId = url.split("v=")[1];
-    return `https://www.youtube.com/embed/${videoId}`;
-  };*/
-
-  /*const handleToggleSave = async () => {
-    setIsSaving(true);
-
-    try {
-      if (isSaved) {
-        // remove from favorites
-        const response = await fetch(`${API_URL}/favorites/${userId}/${recipeId}`, {
-          method: "DELETE",
-        });
-        if (!response.ok) throw new Error("Failed to remove recipe");
-
-        setIsSaved(false);
-      } else {
-        // add to favorites
-        const response = await fetch(`${API_URL}/favorites`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId,
-            recipeId: parseInt(recipeId),
-            title: recipe.title,
-            image: recipe.image,
-            cookTime: recipe.cookTime,
-            servings: recipe.servings,
-          }),
-        });
-
-        if (!response.ok) throw new Error("Failed to save recipe");
-        setIsSaved(true);
-      }
-    } catch (error) {
-      console.error("Error toggling recipe save:", error);
-      Alert.alert("Error", `Something went wrong. Please try again.`);
-    } finally {
-      setIsSaving(false);
-    }
-  };*/
-
   const handleToggleSave = async () => {
+    if (!userId) {
+      Alert.alert("Sign in required", "You need to sign in to save favorites.");
+      return;
+    }
+
+    if (!recipe) return;
+
     setIsSaving(true);
-  
+
     try {
       if (isSaved) {
-        // remove from favorites
         const response = await fetch(`${API_URL}/favorites/${userId}/${recipeId}`, {
           method: "DELETE",
         });
-        if (!response.ok) throw new Error("Failed to remove recipe");
-  
+
+        if (!response.ok) {
+          throw new Error("Failed to remove recipe");
+        }
+
         setIsSaved(false);
       } else {
-        // add to favorites
-        // unutar else bloka za POST metodu:
         const response = await fetch(`${API_URL}/favorites`, {
           method: "POST",
           headers: {
@@ -131,33 +112,35 @@ const RecipeDetailScreen = () => {
           },
           body: JSON.stringify({
             userId,
-            recipeId: recipeId, 
-            // Koristimo naziv iz objekta, a ako ne postoji, stavljamo rezervno ime ili prazan tekst
-            title: recipe.title || recipe.strMeal || "Unknown Recipe", 
-            image: recipe.image || recipe.strMealThumb || "",
-            // Budući da vanjski API nema cookTime i servings, šaljemo fiksne vrijednosti kao u shemi
+            recipeId: recipeId,
+            title: recipe.title || "Unknown Recipe",
+            image: recipe.image || "",
             cookTime: recipe.cookTime || "30-45 min",
             servings: recipe.servings || "4",
           }),
         });
 
-        if (!response.ok) throw new Error("Failed to save recipe");
+        if (!response.ok) {
+          throw new Error("Failed to save recipe");
+        }
+
         setIsSaved(true);
       }
     } catch (error) {
       console.error("Error toggling recipe save:", error);
-      Alert.alert("Error", `Something went wrong. Please try again.`);
+      Alert.alert("Error", "Something went wrong. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (loading) return <LoadingSpinner message="Loading recipe details..." />;
+  if (loading || !recipe) {
+    return <LoadingSpinner message="Loading recipe details..." />;
+  }
 
   return (
     <View style={recipeDetailStyles.container}>
       <ScrollView>
-        {/* HEADER */}
         <View style={recipeDetailStyles.headerContainer}>
           <View style={recipeDetailStyles.imageContainer}>
             <Image
@@ -196,23 +179,22 @@ const RecipeDetailScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Title Section */}
           <View style={recipeDetailStyles.titleSection}>
             <View style={recipeDetailStyles.categoryBadge}>
               <Text style={recipeDetailStyles.categoryText}>{recipe.category}</Text>
             </View>
             <Text style={recipeDetailStyles.recipeTitle}>{recipe.title}</Text>
-            {recipe.area && (
+
+            {recipe.area ? (
               <View style={recipeDetailStyles.locationRow}>
                 <Ionicons name="location" size={16} color={COLORS.white} />
                 <Text style={recipeDetailStyles.locationText}>{recipe.area} Cuisine</Text>
               </View>
-            )}
+            ) : null}
           </View>
         </View>
 
         <View style={recipeDetailStyles.contentSection}>
-          {/* QUICK STATS */}
           <View style={recipeDetailStyles.statsContainer}>
             <View style={recipeDetailStyles.statCard}>
               <LinearGradient
@@ -236,32 +218,7 @@ const RecipeDetailScreen = () => {
               <Text style={recipeDetailStyles.statLabel}>Servings</Text>
             </View>
           </View>
-           
-          {/* {recipe.youtubeUrl && (
-            <View style={recipeDetailStyles.sectionContainer}>
-              <View style={recipeDetailStyles.sectionTitleRow}>
-                <LinearGradient
-                  colors={["#FF0000", "#CC0000"]}
-                  style={recipeDetailStyles.sectionIcon}
-                >
-                  <Ionicons name="play" size={16} color={COLORS.white} />
-                </LinearGradient>
 
-                <Text style={recipeDetailStyles.sectionTitle}>Video Tutorial</Text>
-              </View>
-
-              <View style={recipeDetailStyles.videoCard}>
-                <WebView
-                  style={recipeDetailStyles.webview}
-                  source={{ uri: getYouTubeEmbedUrl(recipe.youtubeUrl) }}
-                  allowsFullscreenVideo
-                  mediaPlaybackRequiresUserAction={false}
-                />
-              </View>
-            </View>
-          )} */}
-
-          {/* INGREDIENTS SECTION */}
           <View style={recipeDetailStyles.sectionContainer}>
             <View style={recipeDetailStyles.sectionTitleRow}>
               <LinearGradient
@@ -284,14 +241,17 @@ const RecipeDetailScreen = () => {
                   </View>
                   <Text style={recipeDetailStyles.ingredientText}>{ingredient}</Text>
                   <View style={recipeDetailStyles.ingredientCheck}>
-                    <Ionicons name="checkmark-circle-outline" size={20} color={COLORS.textLight} />
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={20}
+                      color={COLORS.textLight}
+                    />
                   </View>
                 </View>
               ))}
             </View>
           </View>
 
-          {/* INSTRUCTIONS SECTION */}
           <View style={recipeDetailStyles.sectionContainer}>
             <View style={recipeDetailStyles.sectionTitleRow}>
               <LinearGradient

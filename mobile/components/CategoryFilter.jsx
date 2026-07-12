@@ -2,7 +2,11 @@ import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Image } from "expo-image";
 import { homeStyles } from "../assets/styles/home.styles";
 
-export default function CategoryFilter({ categories, selectedCategory, onSelectCategory }) {
+export default function CategoryFilter({
+  categories,
+  selectedCategory,
+  onSelectCategory,
+}) {
   return (
     <View style={homeStyles.categoryFilterContainer}>
       <ScrollView
@@ -11,22 +15,32 @@ export default function CategoryFilter({ categories, selectedCategory, onSelectC
         contentContainerStyle={homeStyles.categoryFilterScrollContent}
       >
         {categories.map((category) => {
-          const isSelected = selectedCategory === category.name;
+          const isSelected = selectedCategory === category.id;
+
           return (
             <TouchableOpacity
               key={category.id}
-              style={[homeStyles.categoryButton, isSelected && homeStyles.selectedCategory]}
-              onPress={() => onSelectCategory(category.name)}
+              style={[
+                homeStyles.categoryButton,
+                isSelected && homeStyles.selectedCategory,
+              ]}
+              onPress={() => onSelectCategory(category)}
               activeOpacity={0.7}
             >
               <Image
-                source={{ uri: category.image }}
-                style={[homeStyles.categoryImage, isSelected && homeStyles.selectedCategoryImage]}
+                source={{ uri: category.thumbnail || category.image }}
+                style={[
+                  homeStyles.categoryImage,
+                  isSelected && homeStyles.selectedCategoryImage,
+                ]}
                 contentFit="cover"
                 transition={300}
               />
               <Text
-                style={[homeStyles.categoryText, isSelected && homeStyles.selectedCategoryText]}
+                style={[
+                  homeStyles.categoryText,
+                  isSelected && homeStyles.selectedCategoryText,
+                ]}
               >
                 {category.name}
               </Text>
