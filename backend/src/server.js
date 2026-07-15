@@ -7,6 +7,7 @@ import {
   recipesTable,
   ingredientsTable,
   recipeIngredientsTable,
+  areasTable,
 } from "./db/schema.js";
 import { and, eq, ilike, inArray } from "drizzle-orm";
 import job from "./config/cron.js";
@@ -127,6 +128,80 @@ app.get("/api/recipes", async (req, res) => {
   }
 });
 
+// app.get("/api/recipes/:id", async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const recipeRows = await db
+//       .select()
+//       .from(recipesTable)
+//       .where(eq(recipesTable.id, id));
+
+//     if (!recipeRows.length) {
+//       return res.status(404).json({ error: "Recipe not found" });
+//     }
+
+//     const recipe = recipeRows[0];
+
+//     let categoryName = "Uncategorized";
+
+//     if (recipe.categoryId) {
+//       const categoryRows = await db
+//         .select()
+//         .from(categoriesTable)
+//         .where(eq(categoriesTable.id, recipe.categoryId));
+
+//       if (categoryRows.length > 0) {
+//         categoryName = categoryRows[0].name;
+//       }
+//     }
+
+//     const recipeIngredientRows = await db
+//       .select()
+//       .from(recipeIngredientsTable)
+//       .where(eq(recipeIngredientsTable.recipeId, id));
+
+//     const ingredientIds = recipeIngredientRows.map((row) => row.ingredientId);
+
+//     let ingredients = [];
+
+//     if (ingredientIds.length > 0) {
+//       ingredients = await db
+//         .select()
+//         .from(ingredientsTable)
+//         .where(inArray(ingredientsTable.id, ingredientIds));
+//     }
+
+//     const ingredientMap = new Map(
+//       ingredients.map((ingredient) => [ingredient.id, ingredient])
+//     );
+
+//     const formattedIngredients = recipeIngredientRows.map((row) => {
+//       const ingredient = ingredientMap.get(row.ingredientId);
+//       if (!ingredient) return row.measure;
+//       return row.measure
+//         ? `${ingredient.name} - ${row.measure}`
+//         : ingredient.name;
+//     });
+
+//     const formattedInstructions = recipe.instructions
+//       ? recipe.instructions
+//           .split(/\r?\n/)
+//           .map((step) => step.trim())
+//           .filter(Boolean)
+//       : [];
+
+//     res.status(200).json({
+//       ...recipe,
+//       category: categoryName,
+//       ingredients: formattedIngredients,
+//       instructions: formattedInstructions,
+//     });
+//   } catch (error) {
+//     console.log("Greška pri dohvaćanju detalja recepta:", error);
+//     res.status(500).json({ error: "Something went wrong" });
+//   }
+// });
 app.get("/api/recipes/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -142,8 +217,8 @@ app.get("/api/recipes/:id", async (req, res) => {
 
     const recipe = recipeRows[0];
 
+    // 1. Dohvat naziva kategorije
     let categoryName = "Uncategorized";
-
     if (recipe.categoryId) {
       const categoryRows = await db
         .select()
@@ -155,6 +230,20 @@ app.get("/api/recipes/:id", async (req, res) => {
       }
     }
 
+    // 2. NOVO: Dohvat naziva regije (Area)
+    let areaName = "Unknown";
+    if (recipe.areaId) {
+      const areaRows = await db
+        .select()
+        .from(areasTable)
+        .where(eq(areasTable.id, recipe.areaId));
+
+      if (areaRows.length > 0) {
+        areaName = areaRows[0].name;
+      }
+    }
+
+    // 3. Dohvat sastojaka recepta
     const recipeIngredientRows = await db
       .select()
       .from(recipeIngredientsTable)
@@ -163,7 +252,6 @@ app.get("/api/recipes/:id", async (req, res) => {
     const ingredientIds = recipeIngredientRows.map((row) => row.ingredientId);
 
     let ingredients = [];
-
     if (ingredientIds.length > 0) {
       ingredients = await db
         .select()
@@ -183,6 +271,7 @@ app.get("/api/recipes/:id", async (req, res) => {
         : ingredient.name;
     });
 
+    // 4. Formatiranje uputa
     const formattedInstructions = recipe.instructions
       ? recipe.instructions
           .split(/\r?\n/)
@@ -190,9 +279,11 @@ app.get("/api/recipes/:id", async (req, res) => {
           .filter(Boolean)
       : [];
 
+    // 5. Slanje odgovora s uključenom regijom
     res.status(200).json({
       ...recipe,
       category: categoryName,
+      area: areaName, // <--- SADA ŠALJEMO NAZIV REGIJE (npr. "Italian") NA FRONTEND!
       ingredients: formattedIngredients,
       instructions: formattedInstructions,
     });
